@@ -1,4 +1,5 @@
 #include "client.h"
+#include<readline/readline.h>
 
 int main(void)
 {
@@ -15,20 +16,14 @@ int main(void)
 	/* ---------------- LOGGING ---------------- */
 
 	logger = iniciar_logger();
-
-	// Usando el logger creado previamente
-	// Escribi: "Hola! Soy un log"
-
+    log_info(logger,"Iniciando programa...");
 
 	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
 
 	config = iniciar_config();
-
-	// Usando el config creado previamente, leemos los valores del config y los 
-	// dejamos en las variables 'ip', 'puerto' y 'valor'
-
-	// Loggeamos el valor de config
-
+    ip = config_get_string_value(config,"IP");
+    puerto = config_get_string_value(config,"PUERTO");
+    valor = config_get_string_value(config,"VALOR");
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
@@ -39,45 +34,42 @@ int main(void)
 	// ADVERTENCIA: Antes de continuar, tenemos que asegurarnos que el servidor esté corriendo para poder conectarnos a él
 
 	// Creamos una conexión hacia el servidor
-	conexion = crear_conexion(ip, puerto);
+	//conexion = crear_conexion(ip, puerto);
 
 	// Enviamos al servidor el valor de CLAVE como mensaje
 
 	// Armamos y enviamos el paquete
-	paquete(conexion);
+	//paquete(conexion);
 
-	terminar_programa(conexion, logger, config);
+	//terminar_programa(conexion, logger, config);
 
 	/*---------------------------------------------------PARTE 5-------------------------------------------------------------*/
 	// Proximamente
+    log_destroy(logger);
+    config_destroy(config);
+    return 0;
 }
 
 t_log* iniciar_logger(void)
 {
-	t_log* nuevo_logger;
-
-	return nuevo_logger;
+	return log_create("tp0.log","Client",false,LOG_LEVEL_INFO);
 }
 
 t_config* iniciar_config(void)
 {
-	t_config* nuevo_config;
-
-	return nuevo_config;
+	t_config* nuevo_config = config_create("../src/tp0.config");
+    return nuevo_config;
 }
 
 void leer_consola(t_log* logger)
 {
-	char* leido;
+	char* leido = readline("> ");
 
-	// La primera te la dejo de yapa
-	leido = readline("> ");
-
-	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
-
-
-	// ¡No te olvides de liberar las lineas antes de regresar!
-
+    while (strcmp(leido,"")){
+        log_info(logger, leido);
+        leido = readline("> ");
+    }
+    free(leido);
 }
 
 void paquete(int conexion)
