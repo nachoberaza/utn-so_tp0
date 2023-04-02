@@ -2,7 +2,6 @@
 #include<readline/readline.h>
 
 int main(void) {
-    /*---------------------------------------------------PARTE 2-------------------------------------------------------------*/
 
     int conexion;
     char *ip;
@@ -12,16 +11,12 @@ int main(void) {
     t_log *logger;
     t_config *config;
 
-    /* ---------------- LOGGING ---------------- */
-
     logger = iniciar_logger();
     if (logger == NULL) {
         printf("No se pudo crear un logger\n\n");
         return 0;
     }
     log_info(logger, "Iniciando programa...");
-
-    /* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
 
     config = iniciar_config();
     if (config == NULL) {
@@ -32,32 +27,17 @@ int main(void) {
     ip = config_get_string_value(config, "IP");
     puerto = config_get_string_value(config, "PUERTO");
 
-    /* ---------------- LEER DE CONSOLA ---------------- */
-
-    //leer_consola(logger);
-
-    /*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
-
-    // ADVERTENCIA: Antes de continuar, tenemos que asegurarnos que el servidor esté corriendo para poder conectarnos a él
-
-    // Creamos una conexión hacia el servidor
     conexion = crear_conexion(ip, puerto);
     if (conexion == NULL) {
         log_info(logger, "Error al crear la conexion...");
         return 0;
     }
 
-    // Enviamos al servidor el valor de CLAVE como mensaje
-    //char *clave = config_get_string_value(config, "CLAVE");
-    //enviar_mensaje(clave,conexion);
-
     // Armamos y enviamos el paquete
     paquete(conexion);
 
     terminar_programa(conexion, logger, config);
 
-    /*---------------------------------------------------PARTE 5-------------------------------------------------------------*/
-    // Proximamente
     return 0;
 }
 
@@ -67,16 +47,6 @@ t_log *iniciar_logger(void) {
 
 t_config *iniciar_config(void) {
     return config_create("../cliente.config");
-}
-
-void leer_consola(t_log *logger) {
-    char *leido = readline("> ");
-
-    while (strcmp(leido, "") != 0) {
-        log_info(logger, "%s", leido);
-        leido = readline("> ");
-    }
-    free(leido);
 }
 
 void paquete(int conexion) {
