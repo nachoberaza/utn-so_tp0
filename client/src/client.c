@@ -1,92 +1,101 @@
 #include "client.h"
 #include<readline/readline.h>
 
-int main(void)
-{
-	/*---------------------------------------------------PARTE 2-------------------------------------------------------------*/
+int main(void) {
+    /*---------------------------------------------------PARTE 2-------------------------------------------------------------*/
 
-	int conexion;
-	char* ip;
-	char* puerto;
-	char* valor;
+    int conexion;
+    char *ip;
+    char *puerto;
+    char *valor;
 
-	t_log* logger;
-	t_config* config;
+    t_log *logger;
+    t_config *config;
 
-	/* ---------------- LOGGING ---------------- */
+    /* ---------------- LOGGING ---------------- */
 
-	logger = iniciar_logger();
-    log_info(logger,"Iniciando programa...");
+    logger = iniciar_logger();
+    if (logger == NULL) {
+        printf("No se pudo crear un logger\n\n");
+        return 0;
+    }
+    log_info(logger, "Iniciando programa...");
 
-	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
+    /* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
 
-	config = iniciar_config();
-    ip = config_get_string_value(config,"IP");
-    puerto = config_get_string_value(config,"PUERTO");
-    valor = config_get_string_value(config,"VALOR");
+    config = iniciar_config();
+    if (config == NULL) {
+        log_error(logger, "No se pudo crear un config");
+        return 0;
+    }
 
-	/* ---------------- LEER DE CONSOLA ---------------- */
+    ip = config_get_string_value(config, "IP");
+    puerto = config_get_string_value(config, "PUERTO");
 
-	leer_consola(logger);
+    /* ---------------- LEER DE CONSOLA ---------------- */
 
-	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
+    //leer_consola(logger);
 
-	// ADVERTENCIA: Antes de continuar, tenemos que asegurarnos que el servidor esté corriendo para poder conectarnos a él
+    /*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
 
-	// Creamos una conexión hacia el servidor
-	//conexion = crear_conexion(ip, puerto);
+    // ADVERTENCIA: Antes de continuar, tenemos que asegurarnos que el servidor esté corriendo para poder conectarnos a él
 
-	// Enviamos al servidor el valor de CLAVE como mensaje
+    // Creamos una conexión hacia el servidor
+    conexion = crear_conexion(ip, puerto);
+    if (conexion == NULL) {
+        log_info(logger, "Error al crear la conexion...");
+        return 0;
+    }
 
-	// Armamos y enviamos el paquete
-	//paquete(conexion);
+    // Enviamos al servidor el valor de CLAVE como mensaje
+    //char *clave = config_get_string_value(config, "CLAVE");
+    //enviar_mensaje(clave,conexion);
 
-	//terminar_programa(conexion, logger, config);
+    // Armamos y enviamos el paquete
+    paquete(conexion);
 
-	/*---------------------------------------------------PARTE 5-------------------------------------------------------------*/
-	// Proximamente
-    log_destroy(logger);
-    config_destroy(config);
+    terminar_programa(conexion, logger, config);
+
+    /*---------------------------------------------------PARTE 5-------------------------------------------------------------*/
+    // Proximamente
     return 0;
 }
 
-t_log* iniciar_logger(void)
-{
-	return log_create("tp0.log","Client",false,LOG_LEVEL_INFO);
+t_log *iniciar_logger(void) {
+    return log_create("tp0.log", "Client", false, LOG_LEVEL_INFO);
 }
 
-t_config* iniciar_config(void)
-{
-	t_config* nuevo_config = config_create("../src/tp0.config");
-    return nuevo_config;
+t_config *iniciar_config(void) {
+    return config_create("../cliente.config");
 }
 
-void leer_consola(t_log* logger)
-{
-	char* leido = readline("> ");
+void leer_consola(t_log *logger) {
+    char *leido = readline("> ");
 
-    while (strcmp(leido,"")){
-        log_info(logger, leido);
+    while (strcmp(leido, "") != 0) {
+        log_info(logger, "%s", leido);
         leido = readline("> ");
     }
     free(leido);
 }
 
-void paquete(int conexion)
-{
-	// Ahora toca lo divertido!
-	char* leido;
-	t_paquete* paquete;
+void paquete(int conexion) {
+    char *leido;
+    t_paquete *paquete = crear_paquete();
 
-	// Leemos y esta vez agregamos las lineas al paquete
+    // Leemos y esta vez agregamos las lineas al paquete
+    while (strcmp(leido, "") != 0) {
+        leido = readline("> ");
+        agregar_a_paquete(paquete, leido, string_length(leido));
+    }
+    enviar_paquete(paquete, conexion);
 
-
-	// ¡No te olvides de liberar las líneas y el paquete antes de regresar!
-	
+    free(leido);
+    eliminar_paquete(paquete);
 }
 
-void terminar_programa(int conexion, t_log* logger, t_config* config)
-{
-	/* Y por ultimo, hay que liberar lo que utilizamos (conexion, log y config) 
-	  con las funciones de las commons y del TP mencionadas en el enunciado */
+void terminar_programa(int conexion, t_log *logger, t_config *config) {
+    liberar_conexion(conexion);
+    log_destroy(logger);
+    config_destroy(config);
 }

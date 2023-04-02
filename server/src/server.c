@@ -1,7 +1,13 @@
 #include "server.h"
 
+t_log* loggerFactory();
+
 int main(void) {
-	logger = log_create("log.log", "Servidor", 1, LOG_LEVEL_DEBUG);
+	logger = loggerFactory();
+    if (logger == NULL){
+        printf("No se pudo crear el logger\n");
+        return 0;
+    }
 
 	int server_fd = iniciar_servidor();
 	log_info(logger, "Servidor listo para recibir al cliente");
@@ -30,6 +36,11 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
+
 void iterator(char* value) {
 	log_info(logger,"%s", value);
+}
+
+t_log* loggerFactory(){
+    return log_create("log.log", "Servidor", 1, LOG_LEVEL_DEBUG);
 }

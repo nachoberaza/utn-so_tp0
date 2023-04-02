@@ -1,119 +1,115 @@
 #include "utils.h"
 
-
-void* serializar_paquete(t_paquete* paquete, int bytes)
-{
-	void * magic = malloc(bytes);
-	int desplazamiento = 0;
-
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
-	desplazamiento+= paquete->buffer->size;
-
-	return magic;
+int newClientSocket(struct addrinfo *servInfo) {
+    return socket(servInfo->ai_family,
+                  servInfo->ai_socktype,
+                  servInfo->ai_protocol);
 }
 
-int crear_conexion(char *ip, char* puerto)
-{
-	struct addrinfo hints;
-	struct addrinfo *server_info;
+void *serializar_paquete(t_paquete *paquete, int bytes) {
+    void *magic = malloc(bytes);
+    int desplazamiento = 0;
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
+    memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
+    desplazamiento += sizeof(int);
+    memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
+    desplazamiento += sizeof(int);
+    memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
+    desplazamiento += paquete->buffer->size;
 
-	getaddrinfo(ip, puerto, &hints, &server_info);
-
-	// Ahora vamos a crear el socket.
-	int socket_cliente = 0;
-
-	// Ahora que tenemos el socket, vamos a conectarlo
-
-
-	freeaddrinfo(server_info);
-
-	return socket_cliente;
+    return magic;
 }
 
-void enviar_mensaje(char* mensaje, int socket_cliente)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
+int crear_conexion(char *ip, char *puerto) {
+    struct addrinfo hints;
+    struct addrinfo *server_info;
 
-	paquete->codigo_operacion = MENSAJE;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = strlen(mensaje) + 1;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
 
-	int bytes = paquete->buffer->size + 2*sizeof(int);
+    getaddrinfo(ip, puerto, &hints, &server_info);
 
-	void* a_enviar = serializar_paquete(paquete, bytes);
+    // Ahora vamos a crear el socket.
+    int socket_cliente = newClientSocket(server_info);
 
-	send(socket_cliente, a_enviar, bytes, 0);
+    // Ahora que tenemos el socket, vamos a conectarlo
+    connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
 
-	free(a_enviar);
-	eliminar_paquete(paquete);
+
+    freeaddrinfo(server_info);
+
+    return socket_cliente;
+}
+
+void enviar_mensaje(char *mensaje, int socket_cliente) {
+    t_paquete *paquete = malloc(sizeof(t_paquete));
+
+    paquete->codigo_operacion = MENSAJE;
+    paquete->buffer = malloc(sizeof(t_buffer));
+    paquete->buffer->size = strlen(mensaje) + 1;
+    paquete->buffer->stream = malloc(paquete->buffer->size);
+    memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
+
+    int bytes = paquete->buffer->size + 2 * sizeof(int);
+
+    void *a_enviar = serializar_paquete(paquete, bytes);
+
+    send(socket_cliente, a_enviar, bytes, 0);
+
+    free(a_enviar);
+    eliminar_paquete(paquete);
 }
 
 
-void crear_buffer(t_paquete* paquete)
-{
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = 0;
-	paquete->buffer->stream = NULL;
+void crear_buffer(t_paquete *paquete) {
+    paquete->buffer = malloc(sizeof(t_buffer));
+    paquete->buffer->size = 0;
+    paquete->buffer->stream = NULL;
 }
 
-t_paquete* crear_super_paquete(void)
-{
-	//me falta un malloc!
-	t_paquete* paquete;
+t_paquete *crear_super_paquete(void) {
+    //me falta un malloc!
+    t_paquete *paquete;
 
-	//descomentar despues de arreglar
-	//paquete->codigo_operacion = PAQUETE;
-	//crear_buffer(paquete);
-	return paquete;
+    //descomentar despues de arreglar
+    //paquete->codigo_operacion = PAQUETE;
+    //crear_buffer(paquete);
+    return paquete;
 }
 
-t_paquete* crear_paquete(void)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = PAQUETE;
-	crear_buffer(paquete);
-	return paquete;
+t_paquete *crear_paquete(void) {
+    t_paquete *paquete = malloc(sizeof(t_paquete));
+    paquete->codigo_operacion = PAQUETE;
+    crear_buffer(paquete);
+    return paquete;
 }
 
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
-{
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
+void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
 
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
-	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
 
-	paquete->buffer->size += tamanio + sizeof(int);
+    paquete->buffer->size += tamanio + sizeof(int);
 }
 
-void enviar_paquete(t_paquete* paquete, int socket_cliente)
-{
-	int bytes = paquete->buffer->size + 2*sizeof(int);
-	void* a_enviar = serializar_paquete(paquete, bytes);
+void enviar_paquete(t_paquete *paquete, int socket_cliente) {
+    int bytes = paquete->buffer->size + 2 * sizeof(int);
+    void *a_enviar = serializar_paquete(paquete, bytes);
 
-	send(socket_cliente, a_enviar, bytes, 0);
+    send(socket_cliente, a_enviar, bytes, 0);
 
-	free(a_enviar);
+    free(a_enviar);
 }
 
-void eliminar_paquete(t_paquete* paquete)
-{
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
+void eliminar_paquete(t_paquete *paquete) {
+    free(paquete->buffer->stream);
+    free(paquete->buffer);
+    free(paquete);
 }
 
-void liberar_conexion(int socket_cliente)
-{
-	close(socket_cliente);
+void liberar_conexion(int socket_cliente) {
+    close(socket_cliente);
 }
